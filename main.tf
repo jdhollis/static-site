@@ -118,4 +118,5 @@ resource "aws_route53_record" "www" {
   type    = "CNAME"
   zone_id = data.aws_route53_zone.site.zone_id
   records = [aws_s3_bucket.www.website_endpoint]
+  ttl     = 172800
 }

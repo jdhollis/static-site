@@ -50,7 +50,7 @@ data "aws_iam_policy_document" "public_read" {
       identifiers = ["*"]
       type = "AWS"
     }
-    
+
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.site.arn}/*"]
   }
@@ -67,6 +67,14 @@ resource "aws_s3_bucket" "www" {
   website {
     redirect_all_requests_to = "https://${var.domain_name}"
   }
+}
+
+resource "aws_s3_bucket_public_access_block" "www" {
+  block_public_acls       = true
+  block_public_policy     = true
+  bucket                  = aws_s3_bucket.www.id
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_cloudfront_distribution" "site" {

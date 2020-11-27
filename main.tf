@@ -28,7 +28,6 @@ resource "aws_acm_certificate_validation" "cert" {
 
 resource "aws_s3_bucket" "site" {
   bucket = var.domain_name
-  acl    = "public-read"
 
   website {
     index_document = "index.html"
@@ -37,9 +36,25 @@ resource "aws_s3_bucket" "site" {
   }
 }
 
+data "aws_iam_policy_document" "public_read" {
+  statement {
+    principals {
+      identifiers = ["*"]
+      type = "AWS"
+    }
+    
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.site.arn}/*"]
+  }
+}
+
+resource "aws_s3_bucket_policy" "public_read" {
+  bucket = aws_s3_bucket.site.id
+  policy = data.aws_iam_policy_document.public_read.json
+}
+
 resource "aws_s3_bucket" "www" {
   bucket = "www.${var.domain_name}"
-  acl    = "public-read"
 
   website {
     redirect_all_requests_to = "https://${var.domain_name}"

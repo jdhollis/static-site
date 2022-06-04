@@ -14,11 +14,11 @@ resource "aws_acm_certificate" "site" {
 
 resource "aws_route53_record" "site_cert_validation" {
   for_each = {
-    for dvo in aws_acm_certificate.site.domain_validation_options : dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
-    }
+  for dvo in aws_acm_certificate.site.domain_validation_options : dvo.domain_name => {
+    name   = dvo.resource_record_name
+    record = dvo.resource_record_value
+    type   = dvo.resource_record_type
+  }
   }
 
   name    = each.value.name
@@ -35,11 +35,17 @@ resource "aws_acm_certificate_validation" "cert" {
 
 resource "aws_s3_bucket" "site" {
   bucket = var.domain_name
+}
 
-  website {
-    index_document = "index.html"
-    error_document = "404.html"
-    routing_rules  = var.routing_rules
+resource "aws_s3_bucket_website_configuration" "site" {
+  bucket = aws_s3_bucket.site.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "404.html"
   }
 }
 
@@ -47,7 +53,7 @@ data "aws_iam_policy_document" "public_read" {
   statement {
     principals {
       identifiers = ["*"]
-      type = "AWS"
+      type        = "AWS"
     }
 
     actions   = ["s3:GetObject"]
@@ -62,9 +68,14 @@ resource "aws_s3_bucket_policy" "public_read" {
 
 resource "aws_s3_bucket" "www" {
   bucket = "www.${var.domain_name}"
+}
 
-  website {
-    redirect_all_requests_to = "https://${var.domain_name}"
+resource "aws_s3_bucket_website_configuration" "www" {
+  bucket = aws_s3_bucket.www.bucket
+
+  redirect_all_requests_to {
+    host_name = var.domain_name
+    protocol  = "https"
   }
 }
 
